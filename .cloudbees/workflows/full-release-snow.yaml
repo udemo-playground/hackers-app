@@ -94,17 +94,17 @@ jobs:
         name: Checkout Hackers Web
         id: checkout-hackers-web
         with:
-          repository: TARGET_ORG/PROJECT_NAME-web
+          repository: udemo-playground/hackers-web
       - uses: https://github.com/cloudbees-io/checkout@v1
         name: Checkout Hackers Auth
         id: checkout-hackers-auth
         with:
-          repository: TARGET_ORG/PROJECT_NAME-auth
+          repository: udemo-playground/hackers-auth
       - uses: https://github.com/cloudbees-io/checkout@v1
         name: Checkout Hackers API
         id: checkout-hackers-api
         with:
-          repository: TARGET_ORG/PROJECT_NAME-api
+          repository: udemo-playground/hackers-api
       - name: Format issues as table
         uses: docker://alpine:3.19
         id: format-issues
@@ -317,15 +317,15 @@ jobs:
   deploy-to-qa:
     needs:
       - approval
-    uses: TARGET_ORG/PROJECT_NAME-app/.cloudbees/workflows/deployer.yaml
+    uses: udemo-playground/hackers-app/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
-      environment: PROJECT_NAME-qa
+      environment: hackers-qa
       dockerUser: ${{ vars.DOCKERHUB_USER }}
     secrets: inherit
     vars: inherit
   enable-feature-flags-qa:
-    environment: PROJECT_NAME-qa
+    environment: hackers-qa
     needs:
       - deploy-to-qa
     steps:
@@ -335,8 +335,8 @@ jobs:
         with:
           token: ${{ secrets.UNIFY_TOKEN }}
           org-id: ${{ vars.ORG_ID }}
-          application-name: PROJECT_NAME-app
-          environment-name: PROJECT_NAME-qa
+          application-name: hackers-app
+          environment-name: hackers-qa
           flag-name: default.score
           use-org-as-app: true
           flag-config: |
@@ -359,7 +359,7 @@ jobs:
             ✅ Flag configuration update successful
           format: MARKDOWN
   run-tests-qa:
-    environment: PROJECT_NAME-qa
+    environment: hackers-qa
     needs:
       - enable-feature-flags-qa
     outputs:
@@ -497,7 +497,7 @@ jobs:
             **QA Test Gate**: PASSED - Ready for staging
           format: MARKDOWN
   exit-criteria-qa:
-    environment: PROJECT_NAME-qa
+    environment: hackers-qa
     needs:
       - run-tests-qa
     outputs:
@@ -652,15 +652,15 @@ jobs:
   deploy-to-staging:
     needs:
       - release-manager-approval
-    uses: TARGET_ORG/PROJECT_NAME-app/.cloudbees/workflows/deployer.yaml
+    uses: udemo-playground/hackers-app/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
-      environment: PROJECT_NAME-staging
+      environment: hackers-staging
       dockerUser: ${{ vars.DOCKERHUB_USER }}
     secrets: inherit
     vars: inherit
   enable-feature-flags-staging:
-    environment: PROJECT_NAME-staging
+    environment: hackers-staging
     needs:
       - deploy-to-staging
     steps:
@@ -670,8 +670,8 @@ jobs:
         with:
           token: ${{ secrets.UNIFY_TOKEN }}
           org-id: ${{ vars.ORG_ID }}
-          application-name: PROJECT_NAME-app
-          environment-name: PROJECT_NAME-staging
+          application-name: hackers-app
+          environment-name: hackers-staging
           flag-name: default.score
           use-org-as-app: true
           flag-config: |
@@ -694,7 +694,7 @@ jobs:
             ✅ Flag configuration update successful
           format: MARKDOWN
   run-tests-staging:
-    environment: PROJECT_NAME-staging
+    environment: hackers-staging
     needs:
       - enable-feature-flags-staging
     outputs:
@@ -849,7 +849,7 @@ jobs:
             **Staging Gate**: PASSED - Ready for production consideration
           format: MARKDOWN
   exit-criteria-staging:
-    environment: PROJECT_NAME-staging
+    environment: hackers-staging
     needs:
       - run-tests-staging
     outputs:
@@ -1003,21 +1003,21 @@ jobs:
           format: MARKDOWN
   wait-for-snow-change-request:
     needs: exit-criteria-staging
-    uses: TARGET_ORG/PROJECT_NAME-app/.cloudbees/workflows/sn-approval.yaml
+    uses: udemo-playground/hackers-app/.cloudbees/workflows/sn-approval.yaml
     secrets: inherit
     vars: inherit
   deploy-to-prod:
     needs:
       - wait-for-snow-change-request
-    uses: TARGET_ORG/PROJECT_NAME-app/.cloudbees/workflows/deployer.yaml
+    uses: udemo-playground/hackers-app/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
-      environment: PROJECT_NAME-prod
+      environment: hackers-prod
       dockerUser: ${{ vars.DOCKERHUB_USER }}
     secrets: inherit
     vars: inherit
   run-smoke-tests:
-    environment: PROJECT_NAME-prod
+    environment: hackers-prod
     needs:
       - deploy-to-prod
     outputs:
@@ -1188,7 +1188,7 @@ jobs:
             **Production Smoke Tests**: PASSED - System ready for traffic
           format: MARKDOWN
   roll-out-feature-flags:
-    environment: PROJECT_NAME-prod
+    environment: hackers-prod
     needs:
       - run-smoke-tests
     steps:
@@ -1209,8 +1209,8 @@ jobs:
         with:
           token: ${{ secrets.UNIFY_TOKEN }}
           org-id: ${{ vars.ORG_ID }}
-          application-name: PROJECT_NAME-app
-          environment-name: PROJECT_NAME-prod
+          application-name: hackers-app
+          environment-name: hackers-prod
           flag-name: default.score
           use-org-as-app: true
           flag-config: |
