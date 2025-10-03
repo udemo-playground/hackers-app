@@ -1,0 +1,98 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: SN-approval
+on:
+  workflow_dispatch:
+  workflow_call:
+jobs:
+  create-approve-servicenow-job:
+    steps:
+      - id: create-cr
+        name: Trigger Servicenow Create 1
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: create
+          short-description: Production request - Testing
+
+      - id: update-cr-assess
+        name: Trigger Servicenow Update Assess state
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: update
+          sys-id: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).sys_id }}
+          state: Assess
+          assignment-group: Change Management
+      - id: update-cr-authorize
+        name: Trigger Servicenow Update Authorize state
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: update
+          sys-id: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).sys_id }}
+          state: Authorize
+      - id: update-cr-scheduled
+        name: Trigger Servicenow Update Scheduled state
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: update
+          sys-id: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).sys_id }}
+          state: Scheduled
+      - id: update-cr-implement
+        name: Trigger Servicenow Update Implement state
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: update
+          sys-id: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).sys_id }}
+          state: Implement
+      - id: update-cr-review
+        name: Trigger Servicenow Update Implement state
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: update
+          sys-id: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).sys_id }}
+          state: Review
+
+      - id: wait-for-approval
+        name: Trigger Servicenow Wait For Approval
+        uses: cloudbees-io/servicenow-poll-for-approval@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          cr-number: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).number }}
+          poll-interval: 1
+          poll-duration: 10
+          state-field-value: Review
+          approval-field-value-approved: Approved
+          approval-field-value-rejected: Rejected
+
+      - id: close-cr
+        name: Trigger Servicenow Update Closed state
+        uses: cloudbees-io/servicenow@v1
+        with:
+          url: ${{ vars.SERVICENOW_URL }}
+          username: ${{ secrets.SERVICENOW_USERNAME }}
+          password: ${{ secrets.SERVICENOW_PASSWORD }}
+          action-type: update
+          sys-id: ${{ fromJSON(steps.create-cr.outputs.servicenow-output).sys_id }}
+          short-description: Production request
+          state: Closed
+          close-code: Successful
+          close-notes: Successfully completed
